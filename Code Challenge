@@ -1,0 +1,152 @@
+import java.io.*;  
+import java.util.*;
+/* 
+ * Last Edited: 7/13/21
+ * Original Author: Cole F
+ */
+
+/*
+Run by calling main()
+This code is intended to take in a .csv file in the form: 
+Name|Rate|Hours|Role
+where role can be either:
+FULL TIME-> Salary = Hours * Rate (capped at 50,000)
+PART TIME-> Salary = Hours * Rate
+CONTRACT-> Salary = 10,000 + Hours * Rate
+and calculate either:
+A. Total salary in dollars
+B. Total salary in dollars, grouped by role.
+This parameter and the input file should be input by user and printed to console.
+*/
+public class CodeChallenge{
+    static String file_path;
+    static String calc;
+    static String chosen_role;
+    final static int cap = 50000; //The max pay for full time
+    final static int bonus = 10000; //The bonus for contract workers.
+    
+    static void getInput(){
+        //Creates two scanners to get user input for file path and chosen calculation.
+         Scanner scan_file = new Scanner(System.in);
+         System.out.println("Please enter file path:");
+         file_path = scan_file.nextLine();
+         
+         Scanner scan_calc = new Scanner(System.in);
+         System.out.println("\nPlease enter the letter corresponding to the calculation desired:\nA. Total Salary\nB. Total Salary Grouped by Role");
+         calc = scan_calc.nextLine();
+         
+         //Loops if invalid choice is entered.
+         Boolean valid; //Storing the validity in case needed later.
+         if (calc.toLowerCase().equals("a")){
+             valid = true;
+         } else if (calc.toLowerCase().equals("b")){
+             valid = true;
+             System.out.println("Which role would you like calculated?\nA. Full Time\nB. Part Time\nC. Contract");
+             Scanner scan_role = new Scanner(System.in);
+             chosen_role = scan_role.nextLine();
+             //Essentially repeats the above process for which role the user needs calculated.
+             if (chosen_role.toLowerCase().equals("a")){
+                 chosen_role = "full time";
+             } else if (chosen_role.toLowerCase().equals("b")){
+                 chosen_role = "part time";
+             } else if (chosen_role.toLowerCase().equals("c")){
+                 chosen_role = "contract";
+             } else{
+                 System.out.println("Invalid selection. Please try again.");
+                 getInput();
+             }
+         } else{
+             valid = false;
+             System.out.println("Invalid selection. Please try again.");
+             getInput();
+         }
+
+    }
+    
+    //Takes in a string file path and returns a nested array list in the form 
+    //[(Name0, Rate0, Hours0, Role0), (Name1, Rate1, Hours1, Role1), ...]
+    //NOTE FOR FUTURE ACCESS: To get a single value must be in the form value.get(a).get(0)[c] **Second get is always 0**
+    //For the purposes of this program, [0] : name, [1] : rate, [2] : hours, [3] : role
+    static ArrayList<ArrayList<String[]>> parseFile(String path){
+        ArrayList<ArrayList<String[]>> values = new ArrayList<ArrayList<String[]>>();
+        try{
+          Scanner scanner = new Scanner(new File(path));
+          while (scanner.hasNextLine()) {
+            //Takes an entire line and removes all extra spaces and commas, turns it into an ArrayList, 
+            //then adds each line to another ArrayList to return.
+            ArrayList<String[]> group = new ArrayList<String[]>();
+            String[] next = scanner.nextLine().split("\\s*;\\s*");
+            String str = Arrays.toString(next);
+            //System.out.println(str);
+            group.add(next);
+            values.add(group);
+            } 
+        }catch(Exception e) {
+             System.out.println("ERROR WHILE PARSING: "+e);
+        }
+    return values;
+    }
+
+    //Calculates annual salary for an individual based on their role, hourly pay, and hours worked.
+    static Integer calculateSalary(String role, String r, String h){
+        Integer final_pay = 0;
+        Integer rate = Integer.parseInt(r);
+        Integer hours = Integer.parseInt(h);
+        String type = role.toLowerCase();
+        if (type.equals("full time")){
+            final_pay = rate * hours;
+            if (final_pay > cap){
+                final_pay = cap;
+            }
+        } else if (type.equals("part time")){
+             final_pay = rate * hours;   
+        } else if (type.equals("contract")){
+             final_pay = (rate * hours) + bonus;   
+        }
+        return final_pay;
+    }
+    
+    //Calculates the sum of all salaries from a given (parsed) file.
+    static Integer pure_total(ArrayList<ArrayList<String[]>> value){
+        Integer total = 0;
+        for(int i = 0; i < value.size(); i++){
+            String role = value.get(i).get(0)[3];
+            String rate = value.get(i).get(0)[1];
+            String hours = value.get(i).get(0)[2];
+            Integer salary = calculateSalary(role, rate, hours);
+            total += salary;
+        }
+        return total;
+    }
+    
+    //Calculates the sum of salaries for a given role.
+    static Integer total_roles(ArrayList<ArrayList<String[]>> value, String role){
+        Integer total = 0;
+        for(int i = 0; i < value.size(); i++){
+            String r = value.get(i).get(0)[3];
+            System.out.println(r);
+            if (r.toLowerCase().equals(role.toLowerCase())){
+                String rate = value.get(i).get(0)[1];
+                String hours = value.get(i).get(0)[2];
+                Integer salary = calculateSalary(r, rate, hours);
+                total += salary;
+            }
+        }
+        return total;
+    }
+    
+    //Main method to be called to run the program.
+     public static void main(String []args){
+            getInput(); //Get the input
+            System.out.println("Continuing...");
+            ArrayList<ArrayList<String[]>> value = parseFile(file_path); //Parse the file
+            System.out.println("Result:");
+            if (calc.equals("a")){
+                System.out.println(pure_total(value));
+            } else if (calc.equals("b")){
+                System.out.println(total_roles(value, chosen_role));
+            }
+            
+         }
+     
+}
